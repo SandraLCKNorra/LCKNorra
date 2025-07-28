@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Admin – Inloggning</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    input, textarea, button { width: 100%; margin-bottom: 10px; padding: 8px; font-size: 1rem; }
+    .hidden { display: none; }
+    .post { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; border-radius: 6px; }
+    .post h2 { margin: 0; }
+    .time { font-size: 0.8rem; color: gray; }
+    img { max-width: 100%; margin: 10px 0; }
+    .delete-btn { background-color: #e74c3c; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; }
+    .delete-btn:hover { background-color: #c0392b; }
+  </style>
+</head>
+<body>
+
+  <div id="loginBox">
+    <h2>Admininloggning</h2>
+    <input type="password" id="passwordInput" placeholder="Ange lösenord">
+    <button onclick="checkPassword()">Logga in</button>
+    <p id="loginError" style="color:red;"></p>
+  </div>
+
+  <div id="adminPanel" class="hidden">
+    <h1>Skapa nytt inlägg</h1>
+    <input type="text" id="title" placeholder="Rubrik">
+    <input type="file" id="imageInput" accept="image/*">
+    <textarea id="body" rows="4" placeholder="Brödtext"></textarea>
+    <button onclick="addPost()">Publicera inlägg</button>
+
+    <h2>Alla inlägg</h2>
+    <div id="postList"></div>
+  </div>
+
+  <script>
+    const correctPassword = "mittlösen123"; // 🔐 Ändra lösenord här
+
+    function checkPassword() {
+      const input = document.getElementById("passwordInput").value;
+      if (input === correctPassword) {
+        document.getElementById("loginBox").classList.add("hidden");
+        document.getElementById("adminPanel").classList.remove("hidden");
+        renderPosts();
+      } else {
+        document.getElementById("loginError").innerText = "Fel lösenord!";
+      }
+    }
+
+    let posts = JSON.parse(localStorage.getItem("posts") || "[]");
+
+    function renderPosts() {
+      const container = document.getElementById("postList");
+      container.innerHTML = "";
+      posts.slice().reverse().forEach((post, index) => {
+        const realIndex = posts.length - 1 - index; // För att hantera omvänd ordning
+        const div = document.createElement("div");
+        div.className = "post";
+        div.innerHTML = `
+          <h2>${post.title}</h2>
+          ${post.image ? `<img src="${post.image}" alt="bild">` : ""}
+          <p>${post.body}</p>
+          <div class="time">Postad: ${new Date(post.time).toLocaleString()}</div>
+          <button class="delete-btn" onclick="deletePost(${realIndex})">Ta bort</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function addPost() {
+      const title = document.getElementById("title").value.trim();
+      const body = document.getElementById("body").value.trim();
+      const imageInput = document.getElementById("imageInput");
+      const file = imageInput.files[0];
+
+      if (!title || !body) {
+        alert("Rubrik och brödtext måste fyllas i.");
+        return;
+      }
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          savePost(title, body, e.target.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        savePost(title, body, null);
+      }
+    }
+
+    function savePost(title, body, image) {
+      posts.push({
+        title,
+        body,
+        image,
+        time: Date.now()
+      });
+      localStorage.setItem("posts", JSON.stringify(posts));
+      document.getElementById("title").value = "";
+      document.getElementById("body").value = "";
+      document.getElementById("imageInput").value = "";
+      renderPosts();
+    }
+
+    function deletePost(index) {
+      if (confirm("Vill du verkligen ta bort det här inlägget?")) {
+        posts.splice(index, 1);
+        localStorage.setItem("posts", JSON.stringify(posts));
+        renderPosts();
+      }
+    }
+  </script>
+
+</body>
+</html>

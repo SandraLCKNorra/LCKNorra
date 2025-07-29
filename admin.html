@@ -1,118 +1,102 @@
 <!DOCTYPE html>
-<html>
+<html lang="sv">
 <head>
-  <meta charset="UTF-8">
-  <title>Admin – Inloggning</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin – LC Norra</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-    input, textarea, button { width: 100%; margin-bottom: 10px; padding: 8px; font-size: 1rem; }
+    body {
+      font-family: sans-serif;
+      margin: 2em auto;
+      max-width: 600px;
+      padding: 0 1em;
+      background-color: #f0f0f0;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 0.6em;
+      margin: 0.4em 0;
+    }
+    button {
+      padding: 0.6em 1.2em;
+      margin-top: 1em;
+    }
     .hidden { display: none; }
-    .post { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; border-radius: 6px; }
-    .post h2 { margin: 0; }
-    .time { font-size: 0.8rem; color: gray; }
-    img { max-width: 100%; margin: 10px 0; }
-    .delete-btn { background-color: #e74c3c; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; }
-    .delete-btn:hover { background-color: #c0392b; }
+    img { max-width: 100%; margin: 1em 0; }
   </style>
 </head>
 <body>
-
-  <div id="loginBox">
-    <h2>Admininloggning</h2>
-    <input type="password" id="passwordInput" placeholder="Ange lösenord">
-    <button onclick="checkPassword()">Logga in</button>
-    <p id="loginError" style="color:red;"></p>
+  <h1>Adminpanel</h1>
+  <div id="login">
+    <p>Ange lösenord:</p>
+    <input type="password" id="losen" />
+    <button onclick="loggaIn()">Logga in</button>
+    <p id="felmeddelande" style="color:red;"></p>
   </div>
 
-  <div id="adminPanel" class="hidden">
-    <h1>Skapa nytt inlägg</h1>
-    <input type="text" id="title" placeholder="Rubrik">
-    <input type="file" id="imageInput" accept="image/*">
-    <textarea id="body" rows="4" placeholder="Brödtext"></textarea>
-    <button onclick="addPost()">Publicera inlägg</button>
-
-    <h2>Alla inlägg</h2>
-    <div id="postList"></div>
+  <div id="admin" class="hidden">
+    <label>Rubrik:</label>
+    <input id="rubrik" />
+    <label>Bild (valfri – klistra in URL eller base64):</label>
+    <input id="bild" />
+    <label>Text:</label>
+    <textarea id="text"></textarea>
+    <button onclick="spara()">Spara inlägg</button>
+    <h2>Inlägg</h2>
+    <div id="allaInlagg"></div>
   </div>
 
   <script>
-    const correctPassword = "mittlösen123"; // 🔐 Ändra lösenord här
-
-    function checkPassword() {
-      const input = document.getElementById("passwordInput").value;
-      if (input === correctPassword) {
-        document.getElementById("loginBox").classList.add("hidden");
-        document.getElementById("adminPanel").classList.remove("hidden");
-        renderPosts();
+    const korrektLosen = "admin123";
+    function loggaIn() {
+      const input = document.getElementById("losen").value;
+      if (input === korrektLosen) {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("admin").classList.remove("hidden");
+        visaAlla();
       } else {
-        document.getElementById("loginError").innerText = "Fel lösenord!";
+        document.getElementById("felmeddelande").innerText = "Fel lösenord!";
       }
     }
 
-    let posts = JSON.parse(localStorage.getItem("posts") || "[]");
+    function spara() {
+      const rubrik = document.getElementById("rubrik").value;
+      const text = document.getElementById("text").value;
+      const bild = document.getElementById("bild").value;
+      const tid = new Date().toLocaleString();
+      const nytt = { rubrik, text, bild, tid };
+      let sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
+      sparade.push(nytt);
+      localStorage.setItem("inlagg", JSON.stringify(sparade));
+      visaAlla();
+      document.getElementById("rubrik").value = "";
+      document.getElementById("text").value = "";
+      document.getElementById("bild").value = "";
+    }
 
-    function renderPosts() {
-      const container = document.getElementById("postList");
+    function visaAlla() {
+      const container = document.getElementById("allaInlagg");
+      const sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
       container.innerHTML = "";
-      posts.slice().reverse().forEach((post, index) => {
-        const realIndex = posts.length - 1 - index; // För att hantera omvänd ordning
-        const div = document.createElement("div");
-        div.className = "post";
-        div.innerHTML = `
-          <h2>${post.title}</h2>
-          ${post.image ? `<img src="${post.image}" alt="bild">` : ""}
-          <p>${post.body}</p>
-          <div class="time">Postad: ${new Date(post.time).toLocaleString()}</div>
-          <button class="delete-btn" onclick="deletePost(${realIndex})">Ta bort</button>
+      sparade.reverse().forEach((post, index) => {
+        container.innerHTML += `
+          <div style="background:#fff; margin:1em 0; padding:1em;">
+            <strong>${post.rubrik}</strong><br/>
+            ${post.bild ? `<img src="${post.bild}">` : ""}
+            <p>${post.text}</p>
+            <small>${post.tid}</small><br/>
+            <button onclick="radera(${sparade.length - 1 - index})">🗑 Radera</button>
+          </div>
         `;
-        container.appendChild(div);
       });
     }
 
-    function addPost() {
-      const title = document.getElementById("title").value.trim();
-      const body = document.getElementById("body").value.trim();
-      const imageInput = document.getElementById("imageInput");
-      const file = imageInput.files[0];
-
-      if (!title || !body) {
-        alert("Rubrik och brödtext måste fyllas i.");
-        return;
-      }
-
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          savePost(title, body, e.target.result);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        savePost(title, body, null);
-      }
-    }
-
-    function savePost(title, body, image) {
-      posts.push({
-        title,
-        body,
-        image,
-        time: Date.now()
-      });
-      localStorage.setItem("posts", JSON.stringify(posts));
-      document.getElementById("title").value = "";
-      document.getElementById("body").value = "";
-      document.getElementById("imageInput").value = "";
-      renderPosts();
-    }
-
-    function deletePost(index) {
-      if (confirm("Vill du verkligen ta bort det här inlägget?")) {
-        posts.splice(index, 1);
-        localStorage.setItem("posts", JSON.stringify(posts));
-        renderPosts();
-      }
+    function radera(index) {
+      let sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
+      sparade.splice(index, 1);
+      localStorage.setItem("inlagg", JSON.stringify(sparade));
+      visaAlla();
     }
   </script>
-
 </body>
 </html>

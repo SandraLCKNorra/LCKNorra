@@ -1,37 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="sv">
 <head>
-  <meta charset="UTF-8">
-  <title>Inlägg</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LC Norra – Inlägg</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-    .post { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; border-radius: 6px; }
-    .post h2 { margin: 0; }
-    .time { font-size: 0.8rem; color: gray; }
-    img { max-width: 100%; margin: 10px 0; }
+    body {
+      font-family: sans-serif;
+      margin: 2em auto;
+      max-width: 700px;
+      padding: 0 1em;
+      background-color: #f8f8f8;
+    }
+    h1 {
+      text-align: center;
+    }
+    article {
+      background: white;
+      padding: 1em;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ccc;
+      margin-bottom: 2em;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 1em auto;
+    }
+    small {
+      color: gray;
+      font-size: 0.9em;
+    }
   </style>
 </head>
 <body>
-<header style="text-align:center; margin-bottom: 2em;">
-  <img src="lc-norr_svvk_logo.jpg" alt="LC Norra logga" style="max-width: 100%; height: auto;">
-</header>
+  <header style="text-align:center; margin-bottom: 2em;">
+    <img src="lc-norr_svvk_logo.jpg" alt="LC Norra logga" style="max-width: 100%; height: auto;">
+  </header>
   <h1>Senaste inlägg</h1>
-  <div id="postList"></div>
-
+  <div id="inlagg"></div>
   <script>
-    const posts = JSON.parse(localStorage.getItem("posts") || "[]");
-    const container = document.getElementById("postList");
-    posts.slice().reverse().forEach(post => {
-      const div = document.createElement("div");
-      div.className = "post";
-      div.innerHTML = `
-        <h2>${post.title}</h2>
-        ${post.image ? `<img src="${post.image}" alt="bild">` : ""}
-        <p>${post.body}</p>
-        <div class="time">Postad: ${new Date(post.time).toLocaleString()}</div>
-      `;
-      container.appendChild(div);
-    });
+    function visaInlagg() {
+      const container = document.getElementById("inlagg");
+      const sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
+      container.innerHTML = "";
+      sparade.reverse().forEach(post => {
+        container.innerHTML += `
+          <article>
+            <h2>${post.rubrik}</h2>
+            ${post.bild ? `<img src="${post.bild}" alt="">` : ""}
+            <p>${post.text}</p>
+            <small>Publicerad: ${post.tid}</small>
+          </article>
+        `;
+      });
+    }
+    visaInlagg();
+    setInterval(visaInlagg, 30000);
   </script>
 </body>
 </html>

@@ -38,7 +38,8 @@
     <label>Rubrik:</label>
     <input id="rubrik" />
     <label>Bild (valfri – klistra in URL eller base64):</label>
-    <input id="bild" />
+    <input type="file" id="bild" accept="image/*" onchange="laddaBild(event)" />
+<img id="preview" style="display:none; max-width:100%; margin-top:1em;" />
     <label>Text:</label>
     <textarea id="text"></textarea>
     <button onclick="spara()">Spara inlägg</button>
@@ -58,11 +59,26 @@
         document.getElementById("felmeddelande").innerText = "Fel lösenord!";
       }
     }
+let bildData = "";
+
+function laddaBild(event) {
+  const fil = event.target.files[0];
+  if (!fil) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    bildData = e.target.result;
+    const preview = document.getElementById("preview");
+    preview.src = bildData;
+    preview.style.display = "block";
+  };
+  reader.readAsDataURL(fil);
+}
 
     function spara() {
       const rubrik = document.getElementById("rubrik").value;
       const text = document.getElementById("text").value;
-      const bild = document.getElementById("bild").value;
+      const bild = bildData;
       const tid = new Date().toLocaleString();
       const nytt = { rubrik, text, bild, tid };
       let sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");

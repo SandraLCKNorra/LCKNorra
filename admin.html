@@ -3,68 +3,95 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin – LC Norra</title>
+  <title>Adminpanel – LCK Norra</title>
   <style>
     body {
       font-family: sans-serif;
+      max-width: 700px;
       margin: 2em auto;
-      max-width: 600px;
-      padding: 0 1em;
       background-color: #f0f0f0;
+      padding: 1em;
     }
-    input, textarea {
+    form {
+      background: white;
+      padding: 1em;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ccc;
+      margin-bottom: 2em;
+    }
+    input, textarea, button {
       width: 100%;
       padding: 0.6em;
-      margin: 0.4em 0;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      border-radius: 5px;
+      border: 1px solid #ccc;
     }
-    button {
-      padding: 0.6em 1.2em;
+    img {
+      max-width: 100%;
+      display: block;
       margin-top: 1em;
     }
-    .hidden { display: none; }
-    img { max-width: 100%; margin: 1em 0; }
+    .inlagg {
+      background: white;
+      padding: 1em;
+      margin-bottom: 1em;
+      border-radius: 10px;
+      box-shadow: 0 0 5px #ccc;
+    }
+    .inlagg button {
+      background: red;
+      color: white;
+      border: none;
+      cursor: pointer;
+      width: auto;
+      margin-top: 0.5em;
+    }
   </style>
 </head>
 <body>
-  <h1>Adminpanel</h1>
-  <div id="login">
-    <p>Ange lösenord:</p>
-    <input type="password" id="losen" />
-    <button onclick="loggaIn()">Logga in</button>
-    <p id="felmeddelande" style="color:red;"></p>
-  </div>
 
-  <div id="admin" class="hidden">
+<h1>Adminpanel – LCK Norra</h1>
+
+<div id="login">
+  <input type="password" id="losen" placeholder="Ange lösenord" />
+  <button onclick="loggaIn()">Logga in</button>
+</div>
+
+<div id="admin" style="display:none;">
+  <form onsubmit="spara(event)">
     <label>Rubrik:</label>
-    <input id="rubrik" />
-    <label>Bild (valfri – klistra in URL eller base64):</label>
+    <input id="rubrik" required />
+    <label>Bild:</label>
     <input type="file" id="bild" accept="image/*" onchange="laddaBild(event)" />
-<img id="preview" style="display:none; max-width:100%; margin-top:1em;" />
+    <img id="preview" style="display:none;" />
     <label>Text:</label>
-    <textarea id="text"></textarea>
-    <button onclick="spara()">Spara inlägg</button>
-    <h2>Inlägg</h2>
-    <div id="allaInlagg"></div>
-  </div>
+    <textarea id="text" rows="4" required></textarea>
+    <button type="submit">Spara inlägg</button>
+  </form>
 
-  <script>
-    const korrektLosen = "admin123";
-    function loggaIn() {
-      const input = document.getElementById("losen").value;
-      if (input === korrektLosen) {
-        document.getElementById("login").style.display = "none";
-        document.getElementById("admin").classList.remove("hidden");
-        visaAlla();
-      } else {
-        document.getElementById("felmeddelande").innerText = "Fel lösenord!";
-      }
-    }
+  <h2>Befintliga inlägg</h2>
+  <div id="inlagg"></div>
+</div>
+
+<script>
+const korrektLosen = "admin123";
 let bildData = "";
+
+function loggaIn() {
+  const losen = document.getElementById("losen").value;
+  if (losen === korrektLosen) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("admin").style.display = "block";
+    visaInlagg();
+  } else {
+    alert("Fel lösenord!");
+  }
+}
 
 function laddaBild(event) {
   const fil = event.target.files[0];
   if (!fil) return;
-
   const reader = new FileReader();
   reader.onload = function(e) {
     bildData = e.target.result;
@@ -75,44 +102,53 @@ function laddaBild(event) {
   reader.readAsDataURL(fil);
 }
 
-    function spara() {
-      const rubrik = document.getElementById("rubrik").value;
-      const text = document.getElementById("text").value;
-      const bild = bildData;
-      const tid = new Date().toLocaleString();
-      const nytt = { rubrik, text, bild, tid };
-      let sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
-      sparade.push(nytt);
-      localStorage.setItem("inlagg", JSON.stringify(sparade));
-      visaAlla();
-      document.getElementById("rubrik").value = "";
-      document.getElementById("text").value = "";
-      document.getElementById("bild").value = "";
-    }
+function spara(event) {
+  event.preventDefault();
+  const rubrik = document.getElementById("rubrik").value;
+  const text = document.getElementById("text").value;
+  const bild = bildData;
+  const tid = new Date().toLocaleString("sv-SE");
 
-    function visaAlla() {
-      const container = document.getElementById("allaInlagg");
-      const sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
-      container.innerHTML = "";
-      sparade.reverse().forEach((post, index) => {
-        container.innerHTML += `
-          <div style="background:#fff; margin:1em 0; padding:1em;">
-            <strong>${post.rubrik}</strong><br/>
-            ${post.bild ? `<img src="${post.bild}">` : ""}
-            <p>${post.text}</p>
-            <small>${post.tid}</small><br/>
-            <button onclick="radera(${sparade.length - 1 - index})">🗑 Radera</button>
-          </div>
-        `;
-      });
-    }
+  const nyttInlagg = { rubrik, text, bild, tid };
+  const sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
+  sparade.push(nyttInlagg);
+  localStorage.setItem("inlagg", JSON.stringify(sparade));
 
-    function radera(index) {
-      let sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
-      sparade.splice(index, 1);
-      localStorage.setItem("inlagg", JSON.stringify(sparade));
-      visaAlla();
-    }
-  </script>
+  document.getElementById("rubrik").value = "";
+  document.getElementById("text").value = "";
+  document.getElementById("bild").value = "";
+  document.getElementById("preview").style.display = "none";
+  bildData = "";
+
+  visaInlagg();
+}
+
+function visaInlagg() {
+  const container = document.getElementById("inlagg");
+  const sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
+  container.innerHTML = "";
+  sparade.reverse().forEach((post, index) => {
+    container.innerHTML += `
+      <div class="inlagg">
+        <h3>${post.rubrik}</h3>
+        ${post.bild ? `<img src="${post.bild}" alt="">` : ""}
+        <p>${post.text}</p>
+        <small>${post.tid}</small><br/>
+        <button onclick="radera(${sparade.length - 1 - index})">Radera</button>
+      </div>
+    `;
+  });
+}
+
+function radera(index) {
+  if (confirm("Är du säker på att du vill radera inlägget?")) {
+    const sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
+    sparade.splice(index, 1);
+    localStorage.setItem("inlagg", JSON.stringify(sparade));
+    visaInlagg();
+  }
+}
+</script>
+
 </body>
 </html>

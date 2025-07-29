@@ -114,9 +114,11 @@ function spara(event) {
   sparade.push(nyttInlagg);
   localStorage.setItem("inlagg", JSON.stringify(sparade));
 
+  // Töm formulär + bildförhandsvisning
   document.getElementById("rubrik").value = "";
   document.getElementById("text").value = "";
   document.getElementById("bild").value = "";
+  document.getElementById("preview").src = "";
   document.getElementById("preview").style.display = "none";
   bildData = "";
 

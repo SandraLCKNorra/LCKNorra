@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Adminpanel – LCK Norra</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 700px;
+      margin: 2em auto;
+      background-color: #f0f0f0;
+      padding: 1em;
+    }
+    form {
+      background: white;
+      padding: 1em;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ccc;
+      margin-bottom: 2em;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 0.6em;
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    img {
+      max-width: 100%;
+      display: block;
+      margin-top: 1em;
+    }
+    .inlagg {
+      background: white;
+      padding: 1em;
+      margin-bottom: 1em;
+      border-radius: 10px;
+      box-shadow: 0 0 5px #ccc;
+    }
+    .inlagg button {
+      background: red;
+      color: white;
+      border: none;
+      cursor: pointer;
+      width: auto;
+      margin-top: 0.5em;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Adminpanel – LCK Norra</h1>
+
+<div id="login">
+  <input type="password" id="losen" placeholder="Ange lösenord" />
+  <button onclick="loggaIn()">Logga in</button>
+</div>
+
+<div id="admin" style="display:none;">
+  <form onsubmit="spara(event)">
+    <label>Rubrik:</label>
+    <input id="rubrik" required />
+    <label>Bild:</label>
+    <input type="file" id="bild" accept="image/*" onchange="laddaBild(event)" />
+    <img id="preview" style="display:none;" />
+    <label>Text:</label>
+    <textarea id="text" rows="4" required></textarea>
+    <button type="submit">Spara inlägg</button>
+  </form>
+
+  <h2>Befintliga inlägg</h2>
+  <div id="inlagg"></div>
+</div>
+
+<script>
+const korrektLosen = "admin123";
+let bildData = "";
+
+function loggaIn() {
+  const losen = document.getElementById("losen").value;
+  if (losen === korrektLosen) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("admin").style.display = "block";
+    visaInlagg();
+  } else {
+    alert("Fel lösenord!");
+  }
+}
+
+function laddaBild(event) {
+  const fil = event.target.files[0];
+  if (!fil) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    bildData = e.target.result;
+    const preview = document.getElementById("preview");
+    preview.src = bildData;
+    preview.style.display = "block";
+  };
+  reader.readAsDataURL(fil);
+}
+
+function spara(event) {
+  event.preventDefault();
+  const rubrik = document.getElementById("rubrik").value;
+  const text = document.getElementById("text").value;
+  const bild = bildData;
+  const tid = new Date().toLocaleString("sv-SE");
+
+  const nyttInlagg = { rubrik, text, bild, tid };
+  const sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
+  sparade.push(nyttInlagg);
+  localStorage.setItem("inlagg", JSON.stringify(sparade));
+
+  document.getElementById("rubrik").value = "";
+  document.getElementById("text").value = "";
+  document.getElementById("bild").value = "";
+  document.getElementById("preview").style.display = "none";
+  bildData = "";
+
+  visaInlagg();
+}
+
+function visaInlagg() {
+  const container = document.getElementById("inlagg");
+  const sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
+  container.innerHTML = "";
+  sparade.reverse().forEach((post, index) => {
+    container.innerHTML += `
+      <div class="inlagg">
+        <h3>${post.rubrik}</h3>
+        ${post.bild ? `<img src="${post.bild}" alt="">` : ""}
+        <p>${post.text}</p>
+        <small>${post.tid}</small><br/>
+        <button onclick="radera(${sparade.length - 1 - index})">Radera</button>
+      </div>
+    `;
+  });
+}
+
+function radera(index) {
+  if (confirm("Är du säker på att du vill radera inlägget?")) {
+    const sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
+    sparade.splice(index, 1);
+    localStorage.setItem("inlagg", JSON.stringify(sparade));
+    visaInlagg();
+  }
+}
+</script>
+
+</body>
+</html>

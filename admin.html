@@ -26,9 +26,10 @@
   <p id="status"></p>
 </div>
 <script>
-const TOKEN = "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";
+const TOKEN = "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";
 const ADMIN_LOSEN = "admin123";
 let bildData = "";
+
 function loggaIn() {
   const losen = document.getElementById("losen").value;
   if (losen === ADMIN_LOSEN) {
@@ -38,6 +39,7 @@ function loggaIn() {
     alert("Fel lösenord.");
   }
 }
+
 function laddaBild(event) {
   const fil = event.target.files[0];
   if (!fil) return;
@@ -50,6 +52,7 @@ function laddaBild(event) {
   };
   reader.readAsDataURL(fil);
 }
+
 async function sparaInlagg() {
   const rubrik = document.getElementById("rubrik").value;
   const text = document.getElementById("text").value;
@@ -58,21 +61,26 @@ async function sparaInlagg() {
   const filURL = "https://api.github.com/repos/SandraLCKNorra/LCKNorra/contents/inlagg.json";
   const headers = { "Authorization": "Bearer " + TOKEN, "Accept": "application/vnd.github+json" };
   let befintliga = [], sha = null;
+
   const resp = await fetch(filURL, { headers });
   if (resp.ok) {
     const json = await resp.json();
     befintliga = JSON.parse(atob(json.content));
     sha = json.sha;
   }
+
   befintliga.push(nytt);
+
   const payload = {
     message: "Uppdaterar inlägg",
     content: btoa(JSON.stringify(befintliga, null, 2)),
     sha: sha
   };
+
   const putResp = await fetch(filURL, {
     method: "PUT", headers: headers, body: JSON.stringify(payload)
   });
+
   if (putResp.ok) {
     document.getElementById("status").innerText = "✅ Inlägget har sparats!";
     document.getElementById("rubrik").value = "";

@@ -1,94 +1,43 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Adminpanel – LCK Norra</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin – LC Norra</title>
   <style>
-    body {
-      font-family: sans-serif;
-      max-width: 700px;
-      margin: 2em auto;
-      background-color: #f0f0f0;
-      padding: 1em;
-    }
-    form {
-      background: white;
-      padding: 1em;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #ccc;
-      margin-bottom: 2em;
-    }
-    input, textarea, button {
-      width: 100%;
-      padding: 0.6em;
-      margin-top: 0.5em;
-      margin-bottom: 1em;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    img {
-      max-width: 100%;
-      display: block;
-      margin-top: 1em;
-    }
-    .inlagg {
-      background: white;
-      padding: 1em;
-      margin-bottom: 1em;
-      border-radius: 10px;
-      box-shadow: 0 0 5px #ccc;
-    }
-    .inlagg button {
-      background: red;
-      color: white;
-      border: none;
-      cursor: pointer;
-      width: auto;
-      margin-top: 0.5em;
-    }
+    body { font-family: sans-serif; max-width: 600px; margin: auto; background: #f0f0f0; padding: 1em; }
+    input, textarea, button { width: 100%; margin-top: 0.5em; margin-bottom: 1em; padding: 0.6em; border: 1px solid #ccc; border-radius: 6px; }
+    img { max-width: 100%; margin: 1em 0; }
+    #preview { display: none; }
   </style>
 </head>
 <body>
-
-<h1>Adminpanel – LCK Norra</h1>
-
-<div id="login">
-  <input type="password" id="losen" placeholder="Ange lösenord" />
+<h1>Admin – Skapa inlägg</h1>
+<div id="loginBox">
+  <input type="password" id="losen" placeholder="Ange admin-lösenord" />
   <button onclick="loggaIn()">Logga in</button>
 </div>
-
-<div id="admin" style="display:none;">
-  <form onsubmit="spara(event)">
-    <label>Rubrik:</label>
-    <input id="rubrik" required />
-    <label>Bild:</label>
-    <input type="file" id="bild" accept="image/*" onchange="laddaBild(event)" />
-    <img id="preview" style="display:none;" />
-    <label>Text:</label>
-    <textarea id="text" rows="4" required></textarea>
-    <button type="submit">Spara inlägg</button>
-  </form>
-
-  <h2>Befintliga inlägg</h2>
-  <div id="inlagg"></div>
+<div id="adminPanel" style="display:none;">
+  <input type="text" id="rubrik" placeholder="Rubrik" required />
+  <input type="file" id="bild" accept="image/*" onchange="laddaBild(event)" />
+  <img id="preview" />
+  <textarea id="text" rows="4" placeholder="Text" required></textarea>
+  <button onclick="sparaInlagg()">Spara inlägg</button>
+  <p id="status"></p>
 </div>
-
 <script>
-const korrektLosen = "admin123";
+const TOKEN = "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";
+const ADMIN_LOSEN = "admin123";
 let bildData = "";
-
 function loggaIn() {
   const losen = document.getElementById("losen").value;
-  if (losen === korrektLosen) {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("admin").style.display = "block";
-    visaInlagg();
+  if (losen === ADMIN_LOSEN) {
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("adminPanel").style.display = "block";
   } else {
-    alert("Fel lösenord!");
+    alert("Fel lösenord.");
   }
 }
-
 function laddaBild(event) {
   const fil = event.target.files[0];
   if (!fil) return;
@@ -101,56 +50,41 @@ function laddaBild(event) {
   };
   reader.readAsDataURL(fil);
 }
-
-function spara(event) {
-  event.preventDefault();
+async function sparaInlagg() {
   const rubrik = document.getElementById("rubrik").value;
   const text = document.getElementById("text").value;
-  const bild = bildData;
   const tid = new Date().toLocaleString("sv-SE");
-
-  const nyttInlagg = { rubrik, text, bild, tid };
-  const sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
-  sparade.push(nyttInlagg);
-  localStorage.setItem("inlagg", JSON.stringify(sparade));
-
-  // Töm formulär + bildförhandsvisning
-  document.getElementById("rubrik").value = "";
-  document.getElementById("text").value = "";
-  document.getElementById("bild").value = "";
-  document.getElementById("preview").src = "";
-  document.getElementById("preview").style.display = "none";
-  bildData = "";
-
-  visaInlagg();
-}
-
-function visaInlagg() {
-  const container = document.getElementById("inlagg");
-  const sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
-  container.innerHTML = "";
-  sparade.reverse().forEach((post, index) => {
-    container.innerHTML += `
-      <div class="inlagg">
-        <h3>${post.rubrik}</h3>
-        ${post.bild ? `<img src="${post.bild}" alt="">` : ""}
-        <p>${post.text}</p>
-        <small>${post.tid}</small><br/>
-        <button onclick="radera(${sparade.length - 1 - index})">Radera</button>
-      </div>
-    `;
+  const nytt = { rubrik, text, bild: bildData, tid };
+  const filURL = "https://api.github.com/repos/SandraLCKNorra/LCKNorra/contents/inlagg.json";
+  const headers = { "Authorization": "Bearer " + TOKEN, "Accept": "application/vnd.github+json" };
+  let befintliga = [], sha = null;
+  const resp = await fetch(filURL, { headers });
+  if (resp.ok) {
+    const json = await resp.json();
+    befintliga = JSON.parse(atob(json.content));
+    sha = json.sha;
+  }
+  befintliga.push(nytt);
+  const payload = {
+    message: "Uppdaterar inlägg",
+    content: btoa(JSON.stringify(befintliga, null, 2)),
+    sha: sha
+  };
+  const putResp = await fetch(filURL, {
+    method: "PUT", headers: headers, body: JSON.stringify(payload)
   });
-}
-
-function radera(index) {
-  if (confirm("Är du säker på att du vill radera inlägget?")) {
-    const sparade = JSON.parse(localStorage.getItem("inlagg") || "[]");
-    sparade.splice(index, 1);
-    localStorage.setItem("inlagg", JSON.stringify(sparade));
-    visaInlagg();
+  if (putResp.ok) {
+    document.getElementById("status").innerText = "✅ Inlägget har sparats!";
+    document.getElementById("rubrik").value = "";
+    document.getElementById("text").value = "";
+    document.getElementById("bild").value = "";
+    document.getElementById("preview").src = "";
+    document.getElementById("preview").style.display = "none";
+    bildData = "";
+  } else {
+    document.getElementById("status").innerText = "❌ Kunde inte spara. Kontrollera token eller rättigheter.";
   }
 }
 </script>
-
 </body>
 </html>
